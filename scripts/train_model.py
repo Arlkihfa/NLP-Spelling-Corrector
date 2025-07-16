@@ -2,16 +2,19 @@
 
 import numpy as np
 import json
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Embedding, LSTM, RepeatVector, TimeDistributed, Dense
+from tensorflow.keras.layers import Embedding, LSTM, RepeatVector, TimeDistributed, Dense
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 
 # --- 1. TENTUKAN HYPERPARAMETERS AWAL ---
 EMBEDDING_DIM = 128
 LSTM_UNITS = 256
 LEARNING_RATE = 0.001
 BATCH_SIZE = 128
-EPOCHS = 10 # Kita akan mulai dengan sedikit epoch dulu
+EPOCHS = 10 # Pelatihan awal dengan jumlah epoch kecil
 
 # --- 2. FUNGSI UNTUK MEMUAT DATA & PARAMETER ---
 def load_data_and_params():
@@ -34,50 +37,77 @@ def load_data_and_params():
 
 # --- 3. FUNGSI UNTUK MEMBANGUN MODEL ---
 def build_model(vocab_size, max_seq_len):
-    """
-    Membangun arsitektur Encoder-Decoder LSTM menggunakan Keras Sequential API.
-    """
+    """Membangun arsitektur Encoder-Decoder LSTM."""
     print("Membangun arsitektur model...")
     model = Sequential()
-
-    # --- ENCODER ---
-    # Input shape tidak perlu ditentukan di lapisan pertama Sequential
-    # Lapisan Embedding
     model.add(Embedding(input_dim=vocab_size, output_dim=EMBEDDING_DIM, input_length=max_seq_len, mask_zero=True))
-    # Lapisan LSTM Encoder
     model.add(LSTM(LSTM_UNITS))
-
-    # --- JEMBATAN ---
-    # Lapisan RepeatVector untuk menduplikasi output Encoder
     model.add(RepeatVector(max_seq_len))
-
-    # --- DECODER ---
-    # Lapisan LSTM Decoder
-    # return_sequences=True penting agar outputnya adalah urutan, bukan hanya output terakhir
     model.add(LSTM(LSTM_UNITS, return_sequences=True))
-    # Lapisan TimeDistributed(Dense) untuk prediksi di setiap langkah waktu
     model.add(TimeDistributed(Dense(vocab_size, activation='softmax')))
-
     return model
+
+# --- FUNGSI UNTUK PLOT HASIL PELATIHAN ---
+def plot_history(history):
+    """Membuat plot untuk loss dan accuracy."""
+    plt.figure(figsize=(12, 5))
+
+    # Plot Accuracy
+    plt.subplot(1, 2, 1)
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.title('Training and Validation Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    # Plot Loss
+    plt.subplot(1, 2, 2)
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title('Training and Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.savefig('training_history.png')
+    print("Grafik hasil pelatihan disimpan sebagai training_history.png")
+    plt.show()
 
 # --- SKRIP UTAMA ---
 if __name__ == "__main__":
-    # Muat data
-    X_train, Y_train, vocab_size, max_seq_len = load_data_and_params()
+    X, Y, vocab_size, max_seq_len = load_data_and_params()
 
-    # Jika data berhasil dimuat, lanjutkan
-    if X_train is not None:
-        # Bangun model
+    if X is not None:
+        # Reshape Y untuk loss function sparse_categorical_crossentropy
+        Y = Y.reshape(Y.shape[0], Y.shape[1], 1)
+
+        # Pisahkan data menjadi training dan validation set (80% train, 20% val)
+        X_train, X_val, Y_train, Y_val = train_test_split(X, Y, test_size=0.2, random_state=42)
+        print(f"Data dibagi: {len(X_train)} training, {len(X_val)} validation.")
+
         model = build_model(vocab_size, max_seq_len)
 
-        # Compile model
+        # Kompilasi model: Mengonfigurasi proses belajar
         optimizer = Adam(learning_rate=LEARNING_RATE)
-        # Menggunakan 'sparse_categorical_crossentropy' karena target (Y) kita adalah integer (bukan one-hot)
         model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-        # Cetak ringkasan arsitektur untuk verifikasi
-        print("\n--- Ringkasan Arsitektur Model ---")
         model.summary()
 
-        # Di sini kita akan menambahkan kode untuk melatih model di hari berikutnya
-        # print("\nModel siap untuk dilatih.")
+        print("\nMemulai pelatihan model...")
+        # Lakukan pelatihan model
+        history = model.fit(
+            X_train, Y_train,
+            batch_size=BATCH_SIZE,
+            epochs=EPOCHS,
+            validation_data=(X_val, Y_val)
+        )
+
+        print("\nPelatihan selesai.")
+
+        # Simpan model yang sudah dilatih
+        model.save("spelling_corrector_model.h5")
+        print("Model berhasil disimpan sebagai spelling_corrector_model.h5")
+
+        # Buat plot dari history pelatihan
+        plot_history(history)
