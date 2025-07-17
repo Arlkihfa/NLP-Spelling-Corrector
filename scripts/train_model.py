@@ -21,9 +21,9 @@ def load_data_and_params():
     """Memuat data pelatihan (X, Y) dan parameter dari file."""
     print("Memuat data pelatihan dan parameter...")
     try:
-        X = np.load("data/X.npy")
-        Y = np.load("data/Y.npy")
-        with open("data/char2idx.json", "r") as f:
+        X = np.load("../data/X.npy")
+        Y = np.load("../data/Y.npy")
+        with open("../data/char2idx.json", "r") as f:
             char2idx = json.load(f)
 
         vocab_size = len(char2idx)

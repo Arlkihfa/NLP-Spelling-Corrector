@@ -7,7 +7,7 @@ import pandas as pd
 # --- KONFIGURASI ---
 PATH_SUMBER_KATA = "../data/kbbi_v.csv"
 PATH_HASIL_CSV = "../data/training_pairs_clean.csv"
-JUMLAH_PASANGAN_TARGET = 1000  # ganti sesuai kebutuhan (uji dulu kecil, misal 1000)
+JUMLAH_PASANGAN_TARGET = 5000  # ganti sesuai kebutuhan (uji dulu kecil, misal 1000)
 ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 # --- FUNGSI TYPO ---

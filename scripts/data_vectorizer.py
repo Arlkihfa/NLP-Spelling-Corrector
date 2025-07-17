@@ -6,7 +6,7 @@ import json
 MAX_SEQ_LEN = 20  # kamu bisa sesuaikan nanti setelah lihat panjang maksimum di dataset
 
 # 1. Load training pairs
-df = pd.read_csv("data/training_pairs.csv")
+df = pd.read_csv("../data/training_pairs_clean.csv")
 typos = df["typo"].astype(str).tolist()
 benars = df["benar"].astype(str).tolist()
 
@@ -20,9 +20,9 @@ char2idx = {ch: idx for idx, ch in enumerate(unique_chars)}
 idx2char = {idx: ch for ch, idx in char2idx.items()}
 
 # 3. Simpan kamus karakter
-with open("data/char2idx.json", "w") as f:
+with open("../data/char2idx.json", "w") as f:
     json.dump(char2idx, f)
-with open("data/idx2char.json", "w") as f:
+with open("../data/idx2char.json", "w") as f:
     json.dump(idx2char, f)
 
 # 4. Fungsi encode kata → indeks
@@ -40,8 +40,8 @@ X = np.array([encode(w) for w in typos])
 Y = np.array([encode(w) for w in benars])
 
 # 6. Simpan sebagai .npy
-np.save("data/X.npy", X)
-np.save("data/Y.npy", Y)
+np.save("../data/X.npy", X)
+np.save("../data/Y.npy", Y)
 
 print("Selesai! Dataset vektorisasi disimpan.")
 print(f"Jumlah pasangan: {len(X)}, Panjang urutan: {MAX_SEQ_LEN}")
